@@ -1,10 +1,12 @@
-# Trabajo Práctico 1 - Modelo de clases
+# Trabajo Práctico 1 - Modelo de clases (entrega corregida)
 
-Este repositorio contiene el modelo de clases del sistema de estacionamiento y las respuestas a las observaciones realizadas sobre la primera entrega.
+Este repositorio contiene la entrega corregida del modelo de clases del sistema de estacionamiento y las respuestas a las observaciones realizadas sobre la primera entrega.
 
-## Modelo de clases
+## Modelo de clases corregido
 
-![Modelo de clases](modelo-clases/Pasted%20Image.png)
+![Modelo de clases corregido](modelo-clases/TP1-modelo-clases-corregido.png)
+
+La versión anterior del modelo también se conserva en [Pasted Image.png](modelo-clases/Pasted%20Image.png) como parte del historial de entregas.
 
 ## Respuestas a las correcciones
 
