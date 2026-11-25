@@ -1,6 +1,191 @@
-# Trabajo Práctico 1 - Modelo de clases
+# Trabajo Práctico 2 - Modelado de Datos
+
+## Entrega V1 - Modelo de Datos
+
+![Modelado de Datos V1](modelo-datos/Actividad-2-Modelado-de-Datos-V1.png)
+
+# Trabajo Práctico 1 - Modelo de clases + Modelo de sistemas
 
 Este repositorio contiene las distintas versiones del modelo de clases del sistema de estacionamiento y las respuestas a las observaciones realizadas sobre cada entrega.
+
+![Modelo de Sistemas V3](modelo-clases/Trabajo-Practico-1-Modelo-de-Sistemas-V3.png)
+
+```text
+// RF-015
+AccesoVehicular :: crearIngreso(numero: int, vehiculo: Vehiculo, personal: Usuario, estacionamiento: Estacionamiento): AccesoVehicular
+{
+        acceso = self.new()
+        acceso.setNumero(numero)
+        acceso.setFechaHora(getDate())
+        acceso.setTipo(TipoAcceso.INGRESO)
+        acceso.setVehiculo(vehiculo)
+        acceso.setPersonal(personal)
+        acceso.setEstacionamiento(estacionamiento)
+        acceso.setCuenta(vehiculo.getConductor().getCuenta())
+        acceso.setSincronizado(true)
+        acceso.setModoLocal(false)
+        return acceso
+}
+
+// RF-015 – Ingreso de vehículo registrado (incluye RF-017)
+AccesoVehicularController :: registrarIngreso(patente: string, personal: Usuario, estacionamiento: Estacionamiento): AccesoVehicular
+{
+        vehiculo = VehiculoBD.recuperarVehiculo(patente)        // RN-001: una patente = un vehículo
+        if vehiculo <> null and vehiculo.puedeIngresar() and estacionamiento.hayCupo() and estacionamiento.estaAbierto(getDate())        // RF-013
+        {
+                numero = AccesoVehicularBD.ultimoNumero() + 1
+                acceso = AccesoVehicular.crearIngreso(numero, vehiculo, personal, estacionamiento)        // RF-015
+                tarifa = estacionamiento.getTarifaVigente(getDate())        // RF-012 / RN-005
+                transaccion = acceso.getCuenta().debitar(tarifa)        // RF-017 / RN-004
+                acceso.setTransaccion(transaccion)
+                estacionamiento.ocuparCupo()        // RF-019 / RF-020
+                AccesoVehicularBD.persistir(acceso)
+                return acceso
+        }
+        return null
+}
+
+// RF-015 (solo vehículos ACTIVOS y que no estén adentro)
+Vehiculo :: puedeIngresar(): boolean
+{
+        if self.estado = EstadoVehiculo.ACTIVO and not self.estaAdentro()
+        {
+                return true
+        }
+        return false
+}
+
+Vehiculo :: estaAdentro(): boolean
+{
+        ultimo = self.AccesoVehicular -> sortedBy(a | a.fechaHora) -> last()
+        if ultimo <> null and ultimo.getTipo() = TipoAcceso.INGRESO
+        {
+                return true
+        }
+        return false
+}
+
+// RF-012 / RN-005
+Estacionamiento :: getTarifaVigente(fecha: date): Tarifa
+{
+        return self.Tarifa -> select(t | t.estaVigente(fecha)) -> first()
+}
+
+// RF-012 / RN-005
+Tarifa :: estaVigente(fecha: date): boolean
+{
+        if self.vigenciaDesde <= fecha and self.vigenciaHasta >= fecha
+        {
+                return true
+        }
+        return false
+}
+
+// RF-017
+Cuenta :: debitar(tarifa: Tarifa): Transaccion
+{
+        transaccion = Transaccion.crearTransaccion(TipoTransaccion.DESCUENTO, tarifa.getMonto(), tarifa, self)
+        self.setSaldo(self.saldo - tarifa.getMonto())        // RN-004: el saldo puede quedar negativo
+        return transaccion
+}
+
+Transaccion :: crearTransaccion(tipo: TipoTransaccion, monto: float, tarifa: Tarifa, cuenta: Cuenta): Transaccion
+{
+        transaccion = self.new()
+        transaccion.setTipo(tipo)
+        transaccion.setMonto(monto)
+        transaccion.setFechaHora(getDate())
+        transaccion.setEstado(EstadoTransaccion.CONFIRMADA)
+        transaccion.setTarifa(tarifa)
+        transaccion.setCuenta(cuenta)
+        return transaccion
+}
+
+// RF-015 / RF-018
+AccesoVehicular :: crearIngresoInvitado(numero: int, invitado: Invitado, personal: Usuario, estacionamiento: Estacionamiento): AccesoVehicular
+{
+        acceso = self.new()
+        acceso.setNumero(numero)
+        acceso.setFechaHora(getDate())
+        acceso.setTipo(TipoAcceso.INGRESO)
+        acceso.setInvitado(invitado)
+        acceso.setPersonal(personal)
+        acceso.setEstacionamiento(estacionamiento)
+        acceso.setSincronizado(true)
+        acceso.setModoLocal(false)
+        return acceso        // sin cuenta ni transacción: el invitado no tiene saldo
+}
+
+// RF-018 – Ingreso de vehículo invitado
+AccesoVehicularController :: registrarIngresoInvitado(patente: string, nombre: string, apellido: string, motivo: string,
+                personal: Usuario, estacionamiento: Estacionamiento): AccesoVehicular
+{
+        if VehiculoBD.recuperarVehiculo(patente) = null and estacionamiento.hayCupo() and estacionamiento.estaAbierto(getDate())        // RN-003 / RF-013
+        {
+                invitado = InvitadoBD.recuperarInvitado(patente)        // RN-002: si ya vino antes, se reutiliza
+                if invitado = null
+                {
+                        invitado = Invitado.crearInvitado(nombre, apellido, patente, motivo)        // RF-018
+                }
+                if not invitado.estaAdentro()
+                {
+                        numero = AccesoVehicularBD.ultimoNumero() + 1
+                        acceso = AccesoVehicular.crearIngresoInvitado(numero, invitado, personal, estacionamiento)        // RF-015 / RF-018
+                        estacionamiento.ocuparCupo()        // RF-019 / RF-020
+                        AccesoVehicularBD.persistir(acceso)
+                        return acceso
+                }
+        }
+        return null
+}
+
+// RF-018
+Invitado :: crearInvitado(nombre: string, apellido: string, patente: string, motivo: string): Invitado
+{
+        invitado = self.new()
+        invitado.setNombre(nombre)
+        invitado.setApellido(apellido)
+        invitado.setPatente(patente)
+        invitado.setMotivo(motivo)
+        return invitado
+}
+
+Invitado :: estaAdentro(): boolean
+{
+        ultimo = self.AccesoVehicular -> sortedBy(a | a.fechaHora) -> last()
+        if ultimo <> null and ultimo.getTipo() = TipoAcceso.INGRESO
+        {
+                return true
+        }
+        return false
+}
+
+// RF-013 (capacidad máxima de cupos)
+Estacionamiento :: hayCupo(): boolean
+{
+        if self.cuposOcupados < self.cuposTotales
+        {
+                return true
+        }
+        return false
+}
+
+// RF-013 (horarios de funcionamiento)
+Estacionamiento :: estaAbierto(fechaHora: datetime): boolean
+{
+        if fechaHora.hora >= self.horarioApertura and fechaHora.hora <= self.horarioCierre
+        {
+                return true
+        }
+        return false
+}
+
+// RF-019 / RF-020 (ocupación y cupos disponibles)
+Estacionamiento :: ocuparCupo()
+{
+        self.setCuposOcupados(self.cuposOcupados + 1)
+}
+```
 
 ## Entrega V2 - Modelo de clases corregido
 
