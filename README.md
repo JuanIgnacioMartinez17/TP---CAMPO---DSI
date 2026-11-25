@@ -2,13 +2,15 @@
 
 ## Entrega V1 - Modelo de Datos
 
-![Modelado de Datos V1](modelo-datos/Actividad-2-Modelado-de-Datos-V1.png)
+![Modelado de Datos V1](modelo-datos/Trabajo%20Practico%202%20Modelado%20de%20Datos%20V1.png)
+![Modelado de Datos V1](modelo-datos/Trabajo%20Practico%202%20Modelado%20de%20Datos%20-%20Tablas%20V1.png)
+
 
 # Trabajo Práctico 1 - Modelo de clases + Modelo de sistemas
 
 Este repositorio contiene las distintas versiones del modelo de clases del sistema de estacionamiento y las respuestas a las observaciones realizadas sobre cada entrega.
 
-![Modelo de Sistemas V3](modelo-clases/Trabajo-Practico-1-Modelo-de-Sistemas-V3.png)
+![Modelo de Sistemas V3](modelo-clases/Trabajo%20Practico%201%20-%20Modelo%20de%20Sistemas%20V3.png)
 
 ```text
 // RF-015
